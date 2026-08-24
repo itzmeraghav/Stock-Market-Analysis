@@ -69,10 +69,10 @@ jobs:
         run: pip-audit -r requirements.txt
 
   # --------------------------------
-  # Codacy Code Quality
+  # SonarQube Code Quality
   # --------------------------------
   codacy:
-    name: Codacy Analysis
+    name: SonarQube Analysis
     runs-on: ubuntu-latest
     needs: security
     steps:
@@ -81,7 +81,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Codacy Analysis
-        uses: codacy/codacy-analysis-cli-action@v4
+      - name: SonarQube Analysis
+        uses: SonarSource/sonarqube-scan-action@v7
         with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          project-token: ${{ secrets.SONAR_TOKEN }}
