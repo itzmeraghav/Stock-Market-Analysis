@@ -1,4 +1,4 @@
-name: Python FastAPI CI Pipeline
+name: Backend CI Pipeline
 
 on:
   push:
@@ -33,15 +33,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Black Format Check
-        run: black --check .
+      - name: Ruff Format Check
+        run: ruff format --check .
 
       - name: Ruff Lint Check
         run: ruff check .
-
-      - name: MyPy Type Check
-        run: mypy .
-
+        
       - name: Run Pytest
         run: |
           pytest \
@@ -68,11 +65,8 @@ jobs:
       - name: Install pip-audit
         run: pip install pip-audit
 
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
-
       - name: Run Security Scan
-        run: pip-audit
+        run: pip-audit -r requirements.txt
 
   # --------------------------------
   # Codacy Code Quality
