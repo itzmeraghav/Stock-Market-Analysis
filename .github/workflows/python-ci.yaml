@@ -40,10 +40,11 @@ jobs:
         run: ruff check .
         
       - name: Run Pytest
+        working-directory: backend
+        env:
+            PYTHONPATH: ${{ github.workspace }}/backend
         run: |
-            cd backend
             pytest --cov=. --cov-report=xml --cov-report=term --cov-fail-under=85
-
 
   # --------------------------------
   # Dependency Security Scan
