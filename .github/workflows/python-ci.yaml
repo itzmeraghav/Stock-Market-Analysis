@@ -103,19 +103,40 @@ jobs:
         run: pip-audit -r backend/requirements.txt
 
   # --------------------------------
-  # SonarQube Code Quality
+  # PACKAGE
   # --------------------------------
-  codacy:
-    name: SonarQube Analysis
+  package:
+    name: Package Application
     runs-on: ubuntu-latest
-    needs: security
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: SonarQube Analysis
-        uses: SonarSource/sonarqube-scan-action@v7
+    needs: security
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create package directory
+        run: |
+          mkdir package
+
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='__pycache__' \
+            --exclude='.pytest_cache' \
+            --exclude='.ruff_cache' \
+            --exclude='htmlcov' \
+            --exclude='.venv' \
+            ./ package/
+
+      - name: Create application archive
+        run: |
+          tar -czf \
+            python-web-api-${{ github.sha }}.tar.gz \
+            package/
+
+      - name: Upload application artifact
+        uses: actions/upload-artifact@v4
         with:
-          project-token: ${{ secrets.SONAR_TOKEN }}
+          name: python-web-api
+          path: python-web-api-${{ github.sha }}.tar.gz
