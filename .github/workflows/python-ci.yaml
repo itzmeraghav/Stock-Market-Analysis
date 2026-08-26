@@ -42,7 +42,7 @@ jobs:
       - name: Run Pytest
         working-directory: backend
         env:
-            PYTHONPATH: ${{ github.workspace }}/backend
+            PYTHONPATH: ${{ github.workspace }}/backend/src
         run: |
             pytest --cov=. --cov-report=xml --cov-report=term --cov-fail-under=85
 
