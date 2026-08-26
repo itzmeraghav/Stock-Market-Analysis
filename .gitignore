@@ -1,0 +1,17 @@
+.github/instructions/codacy.instructions.md
+.codacy
+.env
+uv.lock
+generated/
+.venv
+__pycache__
+.vscode
+myvenv
+.coverage
+coverage.xml
+.pip-audit.toml
+.pytest_cache
+.ruff_cache
+*.joblib
+*.log
+*.xml
