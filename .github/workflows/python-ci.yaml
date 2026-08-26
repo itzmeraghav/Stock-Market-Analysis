@@ -100,7 +100,7 @@ jobs:
         run: pip install pip-audit
 
       - name: Run Security Scan
-        run: pip-audit -r requirements.txt
+        run: pip-audit -r backend/requirements.txt
 
   # --------------------------------
   # SonarQube Code Quality
