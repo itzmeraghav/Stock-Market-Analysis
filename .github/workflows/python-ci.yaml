@@ -40,11 +40,25 @@ jobs:
         run: ruff check .
         
       - name: Run Pytest
-        run: |
-            cd backend
-            pytest --cov=. --cov-report=xml --cov-report=term --cov-fail-under=85
-
-
+      working-directory: backend
+      env:
+            PYTHONPATH: ${{ github.workspace }}/backend/src
+            DATABASE_URL: sqlite:///:memory:
+            APP_NAME: stockmarketanalytics-test
+            DEBUG: "true"
+            JWT_SECRET_KEY: test-secret-key-not-for-prod
+           JWT_ALGORITHM: HS256
+           ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+           REFRESH_TOKEN_EXPIRE_DAYS: "7"
+           LOGIN_RATE_LIMIT_PER_IP: 5/minute
+           LOGIN_MAX_FAILED_ATTEMPTS: "5"
+           LOGIN_LOCKOUT_MINUTES: "15"
+           REFRESH_MIN_INTERVAL_SECONDS: "30"
+           TOKEN_GLOBAL_CAP_PER_HOUR: 1000/hour
+           RATE_LIMIT_AUTHENTICATED: 100/minute
+           RATE_LIMIT_UNAUTHENTICATED: 20/minute
+      run: |
+           pytest --cov=. --cov-report=xml --cov-report=term --cov-fail-under=85
   # --------------------------------
   # Dependency Security Scan
   # --------------------------------
