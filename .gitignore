@@ -13,4 +13,5 @@ coverage.xml
 .pytest_cache
 .ruff_cache
 *.joblib
-*log
+*.log
+*.xml

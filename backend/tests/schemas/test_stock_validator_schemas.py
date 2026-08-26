@@ -4,7 +4,6 @@ from datetime import date
 
 import pytest
 from pydantic import ValidationError
-
 from stockmarketanalytics.schemas.stock_price_validator import (
     StockPriceIn,
     StockPriceValidationError,

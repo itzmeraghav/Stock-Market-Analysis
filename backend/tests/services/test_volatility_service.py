@@ -4,7 +4,6 @@ from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
 import pytest
-
 from stockmarketanalytics.models.stock_price import StockPrice
 from stockmarketanalytics.services.volatility_service import (
     MIN_TRADING_DAYS_REQUIRED,

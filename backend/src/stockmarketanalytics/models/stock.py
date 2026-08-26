@@ -4,7 +4,6 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from stockmarketanalytics.data.app_db_context import Base
 
 

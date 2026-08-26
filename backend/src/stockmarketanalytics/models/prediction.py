@@ -4,7 +4,6 @@ from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from stockmarketanalytics.data.app_db_context import Base
 
 

@@ -4,7 +4,6 @@ from datetime import date
 
 import pytest
 from sqlalchemy.exc import IntegrityError
-
 from stockmarketanalytics.models.prediction import Prediction
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice

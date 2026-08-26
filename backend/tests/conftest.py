@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
-
 from stockmarketanalytics.data.app_db_context import Base
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice

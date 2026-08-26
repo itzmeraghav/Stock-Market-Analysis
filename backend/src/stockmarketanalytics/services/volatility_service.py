@@ -5,7 +5,6 @@ from datetime import UTC, datetime, timedelta
 
 import numpy as np
 from sqlalchemy.orm import Session
-
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice
 
