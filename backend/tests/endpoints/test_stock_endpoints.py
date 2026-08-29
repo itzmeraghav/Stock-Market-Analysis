@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from fastapi import HTTPException
-
 from stockmarketanalytics.endpoints import stock_endpoints
 
 

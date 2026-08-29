@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
-
 from stockmarketanalytics.schemas.option_schemas import (
     OptionCalculationOut,
     OptionCalculationRequest,

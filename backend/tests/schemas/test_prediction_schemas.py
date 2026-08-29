@@ -4,7 +4,6 @@ from datetime import UTC, date, datetime
 
 import pytest
 from pydantic import ValidationError
-
 from stockmarketanalytics.schemas.prediction_schemas import (
     BacktestResult,
     ModelComparisonEntry,

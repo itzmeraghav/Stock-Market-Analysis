@@ -5,7 +5,6 @@ from datetime import date
 import numpy as np
 import pandas as pd
 import pytest
-
 from stockmarketanalytics.models.technical_indicator import TechnicalIndicator
 from stockmarketanalytics.services.indicator_service import IndicatorService
 

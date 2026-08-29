@@ -7,7 +7,6 @@ from pathlib import Path
 import pandas as pd
 import yfinance as yf
 from sqlalchemy.orm import Session
-
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice
 from stockmarketanalytics.schemas.stock_price_validator import (

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from stockmarketanalytics.data.app_db_context import get_db
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.schemas.option_schemas import (

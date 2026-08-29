@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from stockmarketanalytics.services.black_scholes_service import BlackScholesService
 
 

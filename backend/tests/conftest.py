@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
-
 from stockmarketanalytics.data.app_db_context import Base
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice
@@ -118,7 +117,6 @@ def app(mock_db_session):
     get_db overridden to return the shared `mock_db_session` mock.
     """
     from fastapi import FastAPI
-
     from stockmarketanalytics.data.app_db_context import get_db
     from stockmarketanalytics.endpoints import option_endpoints
 

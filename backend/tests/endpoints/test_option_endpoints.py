@@ -4,7 +4,6 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
-
 from stockmarketanalytics.endpoints import option_endpoints
 from stockmarketanalytics.schemas.option_schemas import OptionCalculationResponse
 from stockmarketanalytics.schemas.prediction_schemas import PredictedDirection

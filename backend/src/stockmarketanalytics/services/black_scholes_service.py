@@ -5,7 +5,6 @@ import math
 
 from scipy.stats import norm
 from sqlalchemy.orm import Session
-
 from stockmarketanalytics.models.option_calculation import OptionCalculation
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.schemas.option_schemas import OptionCalculationResponse
