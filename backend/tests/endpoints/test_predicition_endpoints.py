@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from fastapi import HTTPException
+
 from stockmarketanalytics.endpoints import prediction_endpoints
 from stockmarketanalytics.schemas.prediction_schemas import ModelComparisonEntry
 

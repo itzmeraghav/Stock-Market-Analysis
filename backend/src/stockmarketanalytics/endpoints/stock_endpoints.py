@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy.orm import Session
+
 from stockmarketanalytics.data.app_db_context import get_db
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice

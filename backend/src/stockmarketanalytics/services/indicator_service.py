@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
+
 from stockmarketanalytics.models.stock_price import StockPrice
 from stockmarketanalytics.models.technical_indicator import TechnicalIndicator
 

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.orm import Session
+
 from stockmarketanalytics.data import app_db_context
 
 

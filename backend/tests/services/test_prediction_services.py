@@ -10,6 +10,7 @@ from sklearn.ensemble import (
     RandomForestRegressor,
 )
 from sklearn.linear_model import LinearRegression
+
 from stockmarketanalytics.models.prediction import Prediction
 from stockmarketanalytics.schemas.prediction_schemas import (
     BacktestResult,

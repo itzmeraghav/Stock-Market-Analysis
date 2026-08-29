@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from stockmarketanalytics.data.app_db_context import SessionLocal
 from stockmarketanalytics.data.db_initializer import initialize_database
+from stockmarketanalytics.endpoints.option_endpoints import router as option_router
 from stockmarketanalytics.endpoints.prediction_endpoints import backtest_router
 from stockmarketanalytics.endpoints.prediction_endpoints import (
     router as prediction_router,
@@ -38,6 +39,7 @@ app.include_router(stock_router, prefix="/api")
 app.include_router(indicator_router, prefix="/api")
 app.include_router(prediction_router, prefix="/api")
 app.include_router(backtest_router, prefix="/api")
+app.include_router(option_router, prefix="/api")
 
 
 @app.on_event("startup")
