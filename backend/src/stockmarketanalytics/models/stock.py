@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from stockmarketanalytics.data.app_db_context import Base
 
 
@@ -42,6 +43,10 @@ class Stock(Base):
     prices = relationship(
         "StockPrice", back_populates="stock", cascade="all, delete-orphan"
     )
+
     predictions = relationship(
         "Prediction", back_populates="stock", cascade="all, delete-orphan"
+    )
+    option_calculations = relationship(
+        "OptionCalculation", back_populates="stock", cascade="all, delete-orphan"
     )

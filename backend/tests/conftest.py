@@ -111,6 +111,28 @@ def exception_factory():
     return make_exception
 
 
+@pytest.fixture
+def app(mock_db_session):
+    """A minimal FastAPI app wired with only the options router, with
+    get_db overridden to return the shared `mock_db_session` mock.
+    """
+    from fastapi import FastAPI
+    from stockmarketanalytics.data.app_db_context import get_db
+    from stockmarketanalytics.endpoints import option_endpoints
+
+    test_app = FastAPI()
+    test_app.include_router(option_endpoints.router)
+    test_app.dependency_overrides[get_db] = lambda: mock_db_session
+    return test_app
+
+
+@pytest.fixture
+def client(app):
+    from fastapi.testclient import TestClient
+
+    return TestClient(app)
+
+
 @pytest.fixture()
 def engine():
     engine = create_engine("sqlite:///:memory:", future=True)

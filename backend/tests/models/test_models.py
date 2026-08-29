@@ -3,7 +3,9 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from sqlalchemy import inspect
 from sqlalchemy.exc import IntegrityError
+from stockmarketanalytics.models.option_calculation import OptionCalculation
 from stockmarketanalytics.models.prediction import Prediction
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice
@@ -225,3 +227,105 @@ class TestPrediction:
 
         with pytest.raises(IntegrityError):
             session.commit()
+
+
+class TestOptionCalculationModel:
+    def test_table_name_is_option_calculations(self):
+        assert OptionCalculation.__tablename__ == "option_calculations"
+
+    def test_has_expected_columns(self):
+        expected_columns = {
+            "id",
+            "stock_id",
+            "calculation_date",
+            "spot_price",
+            "strike_price",
+            "time_to_expiry",
+            "risk_free_rate",
+            "volatility",
+            "call_price",
+            "put_price",
+            "call_delta",
+            "put_delta",
+            "gamma",
+            "vega",
+            "theta",
+            "rho",
+        }
+
+        mapper = inspect(OptionCalculation)
+        actual_columns = {col.key for col in mapper.columns}
+
+        assert actual_columns == expected_columns
+
+    def test_id_is_primary_key(self):
+        mapper = inspect(OptionCalculation)
+
+        assert mapper.columns["id"].primary_key is True
+
+    def test_stock_id_is_foreign_key_and_not_nullable(self):
+        mapper = inspect(OptionCalculation)
+        stock_id_column = mapper.columns["stock_id"]
+
+        assert stock_id_column.nullable is False
+        fk_targets = {fk.target_fullname for fk in stock_id_column.foreign_keys}
+        assert fk_targets == {"stocks.id"}
+
+    def test_numeric_fields_are_not_nullable(self):
+        numeric_fields = [
+            "spot_price",
+            "strike_price",
+            "time_to_expiry",
+            "risk_free_rate",
+            "volatility",
+            "call_price",
+            "put_price",
+            "call_delta",
+            "put_delta",
+            "gamma",
+            "vega",
+            "theta",
+            "rho",
+        ]
+
+        mapper = inspect(OptionCalculation)
+
+        for field in numeric_fields:
+            assert mapper.columns[field].nullable is False, (
+                f"{field} should be non-nullable"
+            )
+
+    def test_calculation_date_has_server_default(self):
+        mapper = inspect(OptionCalculation)
+        calculation_date_column = mapper.columns["calculation_date"]
+
+        assert calculation_date_column.server_default is not None
+
+    def test_stock_relationship_is_configured(self):
+        mapper = inspect(OptionCalculation)
+        relationship_names = {rel.key for rel in mapper.relationships}
+
+        assert "stock" in relationship_names
+        assert mapper.relationships["stock"].back_populates == "option_calculations"
+
+    def test_instantiation_with_python_side_defaults(self):
+        record = OptionCalculation(
+            stock_id=1,
+            spot_price=150.0,
+            strike_price=155.0,
+            time_to_expiry=0.0822,
+            risk_free_rate=0.05,
+            volatility=0.2,
+            call_price=5.12,
+            put_price=8.34,
+            call_delta=0.45,
+            put_delta=-0.55,
+            gamma=0.03,
+            vega=0.12,
+            theta=-0.02,
+            rho=0.04,
+        )
+
+        assert record.stock_id == 1
+        assert record.call_price == 5.12
+        assert record.calculation_date is None
