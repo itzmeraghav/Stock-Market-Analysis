@@ -47,6 +47,11 @@ class Stock(Base):
     predictions = relationship(
         "Prediction", back_populates="stock", cascade="all, delete-orphan"
     )
+
     option_calculations = relationship(
         "OptionCalculation", back_populates="stock", cascade="all, delete-orphan"
+    )
+
+    trading_analyses = relationship(
+        "TradingAnalysis", back_populates="stock", cascade="all, delete-orphan"
     )

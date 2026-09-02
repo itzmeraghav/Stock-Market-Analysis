@@ -133,6 +133,59 @@ def client(app):
     return TestClient(app)
 
 
+@pytest.fixture
+def trading_app(mock_db_session):
+    """A minimal FastAPI app wired with only the trading router, with
+    get_db overridden to return the shared `mock_db_session` mock.
+    """
+    from fastapi import FastAPI
+    from stockmarketanalytics.data.app_db_context import get_db
+    from stockmarketanalytics.endpoints import trading_endpoints
+
+    test_app = FastAPI()
+    test_app.include_router(trading_endpoints.router)
+    test_app.dependency_overrides[get_db] = lambda: mock_db_session
+    return test_app
+
+
+@pytest.fixture
+def trading_client(trading_app):
+    from fastapi.testclient import TestClient
+
+    return TestClient(trading_app)
+
+
+@pytest.fixture
+def fake_prediction():
+    """A stand-in for a single-model prediction result.
+
+    Pulls a real member off PredictedDirection so tests stay valid
+    against the actual enum without hardcoding its values.
+    """
+    from types import SimpleNamespace
+
+    from stockmarketanalytics.schemas.prediction_schemas import PredictedDirection
+
+    direction = next(iter(PredictedDirection))
+    return SimpleNamespace(
+        model="xgboost",
+        current_price=100.0,
+        predicted_price=110.0,
+        expected_change_percent=10.0,
+        direction=direction,
+    )
+
+
+@pytest.fixture
+def fake_prediction_result(fake_prediction):
+    """A stand-in for PredictionService.predict_all()'s return value."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        best_model=fake_prediction.model, predictions=[fake_prediction]
+    )
+
+
 @pytest.fixture()
 def engine():
     engine = create_engine("sqlite:///:memory:", future=True)

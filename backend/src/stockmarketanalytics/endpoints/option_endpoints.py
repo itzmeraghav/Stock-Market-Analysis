@@ -54,14 +54,12 @@ def forecast_option(
     try:
         prediction = prediction_service.predict(stock, model_name=request.model_name)
     except ValueError as exc:
-        # raise HTTPException(status_code=400, detail=str(exc)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     volatility_service = VolatilityService(db)
     try:
         volatility = volatility_service.calculate_historical_volatility(stock, years=5)
     except ValueError as exc:
-        # raise HTTPException(status_code=400, detail=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     black_scholes_service = BlackScholesService(db)
@@ -75,7 +73,6 @@ def forecast_option(
             volatility=volatility,
         )
     except ValueError as exc:
-        # raise HTTPException(status_code=400, detail=str(exc))
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return OptionForecastResponse(

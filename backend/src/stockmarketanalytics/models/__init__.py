@@ -7,6 +7,9 @@ from stockmarketanalytics.models.stock_price import StockPrice as StockPrice
 from stockmarketanalytics.models.technical_indicator import (
     TechnicalIndicator as TechnicalIndicator,
 )
+from stockmarketanalytics.models.trading_analysis import (
+    TradingAnalysis as TradingAnalysis,
+)
 
 __all__ = [
     "OptionCalculation",
@@ -14,4 +17,5 @@ __all__ = [
     "Stock",
     "StockPrice",
     "TechnicalIndicator",
+    "TradingAnalysis",
 ]

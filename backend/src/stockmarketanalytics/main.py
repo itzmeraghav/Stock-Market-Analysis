@@ -14,6 +14,7 @@ from stockmarketanalytics.endpoints.prediction_endpoints import (
 )
 from stockmarketanalytics.endpoints.stock_endpoints import indicator_router
 from stockmarketanalytics.endpoints.stock_endpoints import router as stock_router
+from stockmarketanalytics.endpoints.trading_endpoints import router as trading_router
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -40,6 +41,7 @@ app.include_router(indicator_router, prefix="/api")
 app.include_router(prediction_router, prefix="/api")
 app.include_router(backtest_router, prefix="/api")
 app.include_router(option_router, prefix="/api")
+app.include_router(trading_router, prefix="/api")
 
 
 @app.on_event("startup")
