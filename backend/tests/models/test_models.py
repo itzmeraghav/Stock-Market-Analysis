@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 from sqlalchemy import inspect
@@ -10,6 +10,7 @@ from stockmarketanalytics.models.prediction import Prediction
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice
 from stockmarketanalytics.models.technical_indicator import TechnicalIndicator
+from stockmarketanalytics.models.trading_analysis import TradingAnalysis
 
 
 class TestStock:
@@ -329,3 +330,100 @@ class TestOptionCalculationModel:
         assert record.stock_id == 1
         assert record.call_price == 5.12
         assert record.calculation_date is None
+
+
+def _build_analysis(stock_id: int) -> TradingAnalysis:
+    return TradingAnalysis(
+        stock_id=stock_id,
+        current_price=100.0,
+        predicted_price=110.0,
+        expected_change_percent=10.0,
+        direction="UP",
+        model_name="xgboost",
+        investment_amount=1000.0,
+        shares=10,
+        invested_amount=1000.0,
+        remaining_amount=0.0,
+        risk_percentage=10.0,
+        stop_loss_price=90.0,
+        target_percentage=20.0,
+        target_price=120.0,
+        maximum_loss=100.0,
+        potential_profit=200.0,
+        risk_reward_ratio=2.0,
+    )
+
+
+class TestTradingAnalysisPersistence:
+    def test_creates_and_persists_with_required_fields(self, session, make_stock):
+        stock = make_stock()
+        analysis = _build_analysis(stock.id)
+
+        session.add(analysis)
+        session.commit()
+        session.refresh(analysis)
+
+        assert analysis.id is not None
+        assert analysis.stock_id == stock.id
+        assert analysis.model_name == "xgboost"
+        assert analysis.shares == 10
+        assert analysis.risk_reward_ratio == pytest.approx(2.0)
+
+    def test_calculation_date_defaults_to_now_on_insert(self, session, make_stock):
+        stock = make_stock()
+        analysis = _build_analysis(stock.id)
+
+        session.add(analysis)
+        session.commit()
+        session.refresh(analysis)
+
+        assert analysis.calculation_date is not None
+        assert isinstance(analysis.calculation_date, datetime)
+
+    def test_raises_when_stock_id_is_missing(self, session):
+        analysis = _build_analysis(stock_id=None)
+
+        session.add(analysis)
+        with pytest.raises(IntegrityError):
+            session.commit()
+
+    def test_raises_when_stock_id_references_nonexistent_stock(self, session):
+        analysis = _build_analysis(stock_id=999999)
+
+        session.add(analysis)
+        with pytest.raises(IntegrityError):
+            session.commit()
+
+    def test_multiple_analyses_can_reference_same_stock(self, session, make_stock):
+        stock = make_stock()
+        first = _build_analysis(stock.id)
+        second = _build_analysis(stock.id)
+
+        session.add_all([first, second])
+        session.commit()
+
+        assert first.id != second.id
+        assert first.stock_id == second.stock_id == stock.id
+
+
+class TestTradingAnalysisRelationship:
+    def test_stock_relationship_loads_the_related_stock(self, session, make_stock):
+        stock = make_stock()
+        analysis = _build_analysis(stock.id)
+
+        session.add(analysis)
+        session.commit()
+        session.refresh(analysis)
+
+        assert analysis.stock.id == stock.id
+        assert analysis.stock.symbol == stock.symbol
+
+    def test_stock_back_populates_trading_analyses(self, session, make_stock):
+        stock = make_stock()
+        analysis = _build_analysis(stock.id)
+
+        session.add(analysis)
+        session.commit()
+        session.refresh(stock)
+
+        assert analysis in stock.trading_analyses
