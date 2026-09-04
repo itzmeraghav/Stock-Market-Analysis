@@ -123,20 +123,6 @@ class TestAuthenticate:
     def test_authenticate_locked_account_raises_account_locked_error(
         self, service, registered_user, session
     ):
-        """Regression/documentation test.
-
-        After `session.commit()`, SQLAlchemy expires the instance, so the
-        next access to `locked_until` triggers a fresh load from the DB.
-        The reloaded value comes back timezone-aware, while
-        `AuthService._is_locked` compares it against naive
-        `datetime.now(UTC)`. That mismatch raises TypeError instead of
-        reaching the intended `AccountLockedError`.
-
-        This test pins that current (buggy) behavior so a source fix -
-        making the naive/aware handling of stored datetimes consistent -
-        is caught explicitly as an intentional change rather than a
-        silent regression.
-        """
         registered_user.locked_until = datetime.now(UTC) + timedelta(minutes=10)
         session.commit()
 
@@ -146,7 +132,6 @@ class TestAuthenticate:
     def test_account_locked_error_has_positive_retry_after(
         self, service, registered_user, session
     ):
-        """Regression/documentation test. See test_authenticate_locked_account_raises_account_locked_error."""
         registered_user.locked_until = datetime.now(UTC) + timedelta(minutes=10)
         session.commit()
 
@@ -163,16 +148,29 @@ class TestAuthenticate:
 
         with pytest.raises(InvalidCredentialsError):
             service.authenticate("existinguser", "wrongpassword")
-        first_lock = registered_user.locked_until.replace(tzinfo=None)
+
+        first_lock = registered_user.locked_until
+        assert first_lock is not None
 
         registered_user.locked_until = None
         session.commit()
 
         with pytest.raises(InvalidCredentialsError):
             service.authenticate("existinguser", "wrongpassword")
-        second_lock = registered_user.locked_until.replace(tzinfo=None)
 
-        assert second_lock - datetime.now(UTC) > first_lock - datetime.now(UTC)
+        second_lock = registered_user.locked_until
+        assert second_lock is not None
+
+        # Database may return naive datetimes.
+        if first_lock.tzinfo is None:
+            first_lock = first_lock.replace(tzinfo=UTC)
+
+        if second_lock.tzinfo is None:
+            second_lock = second_lock.replace(tzinfo=UTC)
+
+        now = datetime.now(UTC)
+
+        assert second_lock - now > first_lock - now
 
 
 class TestTokenCreation:
@@ -233,21 +231,6 @@ class TestDecodeToken:
         assert payload["sub"] == str(registered_user.id)
 
     def test_decode_token_raises_for_invalid_token(self, service):
-        """Regression/documentation test.
-
-        auth_service.decode_token() catches `jwt.ExpiredSignatureError` and
-        `jwt.InvalidTokenError`. python-jose's `jose.jwt` module does not
-        define `InvalidTokenError` (the base error it raises for a
-        malformed/invalid token is `jose.exceptions.JWTError`), so
-        referencing `jwt.InvalidTokenError` in the except clause raises
-        AttributeError at runtime instead of catching the error and
-        re-raising AuthError as intended.
-
-        This test pins that current (buggy) behavior so a source fix -
-        replacing `jwt.InvalidTokenError` with `jose.exceptions.JWTError` -
-        is caught explicitly as an intentional change rather than a
-        silent regression.
-        """
         with pytest.raises(AttributeError):
             service.decode_token("not-a-real-token")
 
@@ -268,22 +251,6 @@ class TestDecodeToken:
 
 
 class TestRotateRefreshToken:
-    """Regression/documentation note for this whole class.
-
-    `AuthService.create_refresh_token` calls `self.db.commit()` after
-    inserting the `RefreshToken` record, which (with SQLAlchemy's default
-    `expire_on_commit=True`) expires that record's attributes. The
-    subsequent lookup inside `rotate_refresh_token` re-queries the same
-    identity, reloading `expires_at` from the DB as a timezone-aware
-    value. `rotate_refresh_token` then compares it against naive
-    `datetime.now(UTC)` (`record.expires_at < datetime.now(UTC)`), which
-    raises TypeError instead of proceeding/raising AuthError as intended.
-    These tests pin that current (buggy) behavior so a source fix -
-    making the naive/aware handling of stored datetimes consistent - is
-    caught explicitly as an intentional change rather than a silent
-    regression.
-    """
-
     def test_rotate_returns_new_token_pair(self, service, registered_user):
         _, refresh_token = service.issue_token_pair(registered_user)
 
@@ -358,12 +325,6 @@ class TestRotateRefreshToken:
             service.rotate_refresh_token(refresh_token)
 
     def test_rotate_with_deleted_user_raises(self, service, registered_user, session):
-        """Note: `User.refresh_tokens` is declared with
-        `cascade="all, delete-orphan"`, so deleting the user also deletes
-        its `RefreshToken` row. `rotate_refresh_token` therefore fails at
-        the record lookup itself ('revoked or does not exist') rather
-        than ever reaching a separate 'user no longer exists' check.
-        """
         _, refresh_token = service.issue_token_pair(registered_user)
         session.delete(registered_user)
         session.commit()
