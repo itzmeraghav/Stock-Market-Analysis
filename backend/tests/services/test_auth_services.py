@@ -8,7 +8,6 @@ from stockmarketanalytics.models.refresh_tokens import RefreshToken
 from stockmarketanalytics.models.users import User
 from stockmarketanalytics.services import auth_service as auth_service_module
 from stockmarketanalytics.services.auth_service import (
-    AccountLockedError,
     AuthError,
     AuthService,
     InvalidCredentialsError,
@@ -61,12 +60,16 @@ class TestRegisterUser:
 
 
 class TestAuthenticate:
-    def test_authenticate_with_correct_credentials_returns_user(self, service, registered_user):
+    def test_authenticate_with_correct_credentials_returns_user(
+        self, service, registered_user
+    ):
         user = service.authenticate("existinguser", "correctpassword")
 
         assert user.id == registered_user.id
 
-    def test_authenticate_resets_failed_attempts_on_success(self, service, registered_user, session):
+    def test_authenticate_resets_failed_attempts_on_success(
+        self, service, registered_user, session
+    ):
         registered_user.failed_login_attempts = 3
         session.commit()
 
@@ -75,7 +78,9 @@ class TestAuthenticate:
         session.refresh(registered_user)
         assert registered_user.failed_login_attempts == 0
 
-    def test_authenticate_sets_last_login_at_on_success(self, service, registered_user, session):
+    def test_authenticate_sets_last_login_at_on_success(
+        self, service, registered_user, session
+    ):
         service.authenticate("existinguser", "correctpassword")
 
         session.refresh(registered_user)
@@ -85,11 +90,15 @@ class TestAuthenticate:
         with pytest.raises(InvalidCredentialsError):
             service.authenticate("nosuchuser", "whatever")
 
-    def test_authenticate_wrong_password_raises_invalid_credentials(self, service, registered_user):
+    def test_authenticate_wrong_password_raises_invalid_credentials(
+        self, service, registered_user
+    ):
         with pytest.raises(InvalidCredentialsError):
             service.authenticate("existinguser", "wrongpassword")
 
-    def test_authenticate_wrong_password_increments_failed_attempts(self, service, registered_user, session):
+    def test_authenticate_wrong_password_increments_failed_attempts(
+        self, service, registered_user, session
+    ):
         with pytest.raises(InvalidCredentialsError):
             service.authenticate("existinguser", "wrongpassword")
 
@@ -99,7 +108,9 @@ class TestAuthenticate:
     def test_authenticate_locks_account_after_max_failed_attempts(
         self, service, registered_user, session, monkeypatch
     ):
-        monkeypatch.setattr(auth_service_module.settings, "login_max_failed_attempts", 3)
+        monkeypatch.setattr(
+            auth_service_module.settings, "login_max_failed_attempts", 3
+        )
         monkeypatch.setattr(auth_service_module.settings, "login_lockout_minutes", 15)
 
         for _ in range(3):
@@ -118,7 +129,7 @@ class TestAuthenticate:
         next access to `locked_until` triggers a fresh load from the DB.
         The reloaded value comes back timezone-aware, while
         `AuthService._is_locked` compares it against naive
-        `datetime.utcnow()`. That mismatch raises TypeError instead of
+        `datetime.now(UTC)`. That mismatch raises TypeError instead of
         reaching the intended `AccountLockedError`.
 
         This test pins that current (buggy) behavior so a source fix -
@@ -126,15 +137,17 @@ class TestAuthenticate:
         is caught explicitly as an intentional change rather than a
         silent regression.
         """
-        registered_user.locked_until = datetime.utcnow() + timedelta(minutes=10)
+        registered_user.locked_until = datetime.now(UTC) + timedelta(minutes=10)
         session.commit()
 
         with pytest.raises(TypeError):
             service.authenticate("existinguser", "correctpassword")
 
-    def test_account_locked_error_has_positive_retry_after(self, service, registered_user, session):
+    def test_account_locked_error_has_positive_retry_after(
+        self, service, registered_user, session
+    ):
         """Regression/documentation test. See test_authenticate_locked_account_raises_account_locked_error."""
-        registered_user.locked_until = datetime.utcnow() + timedelta(minutes=10)
+        registered_user.locked_until = datetime.now(UTC) + timedelta(minutes=10)
         session.commit()
 
         with pytest.raises(TypeError):
@@ -143,7 +156,9 @@ class TestAuthenticate:
     def test_lockout_duration_escalates_with_overflow(
         self, service, registered_user, session, monkeypatch
     ):
-        monkeypatch.setattr(auth_service_module.settings, "login_max_failed_attempts", 1)
+        monkeypatch.setattr(
+            auth_service_module.settings, "login_max_failed_attempts", 1
+        )
         monkeypatch.setattr(auth_service_module.settings, "login_lockout_minutes", 10)
 
         with pytest.raises(InvalidCredentialsError):
@@ -157,7 +172,7 @@ class TestAuthenticate:
             service.authenticate("existinguser", "wrongpassword")
         second_lock = registered_user.locked_until.replace(tzinfo=None)
 
-        assert second_lock - datetime.utcnow() > first_lock - datetime.utcnow()
+        assert second_lock - datetime.now(UTC) > first_lock - datetime.now(UTC)
 
 
 class TestTokenCreation:
@@ -185,22 +200,32 @@ class TestTokenCreation:
         assert payload["type"] == "refresh"
         assert "jti" in payload
 
-    def test_create_refresh_token_persists_hashed_record(self, service, registered_user, session):
+    def test_create_refresh_token_persists_hashed_record(
+        self, service, registered_user, session
+    ):
         token = service.create_refresh_token(registered_user)
 
-        record = session.query(RefreshToken).filter(RefreshToken.user_id == registered_user.id).first()
+        record = (
+            session.query(RefreshToken)
+            .filter(RefreshToken.user_id == registered_user.id)
+            .first()
+        )
         assert record is not None
         assert record.token_hash != token
         assert record.revoked is False
 
-    def test_issue_token_pair_returns_two_distinct_tokens(self, service, registered_user):
+    def test_issue_token_pair_returns_two_distinct_tokens(
+        self, service, registered_user
+    ):
         access_token, refresh_token = service.issue_token_pair(registered_user)
 
         assert access_token != refresh_token
 
 
 class TestDecodeToken:
-    def test_decode_token_returns_payload_for_valid_token(self, service, registered_user):
+    def test_decode_token_returns_payload_for_valid_token(
+        self, service, registered_user
+    ):
         token = service.create_access_token(registered_user)
 
         payload = service.decode_token(token)
@@ -251,7 +276,7 @@ class TestRotateRefreshToken:
     subsequent lookup inside `rotate_refresh_token` re-queries the same
     identity, reloading `expires_at` from the DB as a timezone-aware
     value. `rotate_refresh_token` then compares it against naive
-    `datetime.utcnow()` (`record.expires_at < datetime.utcnow()`), which
+    `datetime.now(UTC)` (`record.expires_at < datetime.now(UTC)`), which
     raises TypeError instead of proceeding/raising AuthError as intended.
     These tests pin that current (buggy) behavior so a source fix -
     making the naive/aware handling of stored datetimes consistent - is
@@ -285,7 +310,12 @@ class TestRotateRefreshToken:
 
     def test_rotate_with_unknown_token_raises(self, service, registered_user):
         fabricated = jwt.encode(
-            {"sub": str(registered_user.id), "type": "refresh", "jti": "fake", "exp": datetime.now(UTC) + timedelta(days=1)},
+            {
+                "sub": str(registered_user.id),
+                "type": "refresh",
+                "jti": "fake",
+                "exp": datetime.now(UTC) + timedelta(days=1),
+            },
             auth_service_module.settings.jwt_secret_key,
             algorithm=auth_service_module.settings.jwt_algorithm,
         )
@@ -303,8 +333,12 @@ class TestRotateRefreshToken:
     def test_rotate_with_expired_record_raises(self, service, registered_user, session):
         _, refresh_token = service.issue_token_pair(registered_user)
         token_hash = service._hash_token(refresh_token)
-        record = session.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
-        record.expires_at = datetime.utcnow() - timedelta(days=1)
+        record = (
+            session.query(RefreshToken)
+            .filter(RefreshToken.token_hash == token_hash)
+            .first()
+        )
+        record.expires_at = datetime.now(UTC) - timedelta(days=1)
         session.commit()
 
         with pytest.raises(TypeError):
@@ -313,8 +347,10 @@ class TestRotateRefreshToken:
     def test_rotate_too_soon_after_previous_refresh_raises(
         self, service, registered_user, session, monkeypatch
     ):
-        monkeypatch.setattr(auth_service_module.settings, "refresh_min_interval_seconds", 3600)
-        registered_user.last_refresh_at = datetime.utcnow()
+        monkeypatch.setattr(
+            auth_service_module.settings, "refresh_min_interval_seconds", 3600
+        )
+        registered_user.last_refresh_at = datetime.now(UTC)
         session.commit()
         _, refresh_token = service.issue_token_pair(registered_user)
 
@@ -343,7 +379,11 @@ class TestRevokeRefreshToken:
         service.revoke_refresh_token(refresh_token)
 
         token_hash = service._hash_token(refresh_token)
-        record = session.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
+        record = (
+            session.query(RefreshToken)
+            .filter(RefreshToken.token_hash == token_hash)
+            .first()
+        )
         assert record.revoked is True
 
     def test_revoke_unknown_token_does_not_raise(self, service):
