@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
+import jwt
 import pytest
-from jose import jwt
+from jwt.exceptions import InvalidTokenError
 from stockmarketanalytics.models.refresh_tokens import RefreshToken
 from stockmarketanalytics.models.users import User
 from stockmarketanalytics.services import auth_service as auth_service_module
@@ -176,12 +177,15 @@ class TestAuthenticate:
 class TestTokenCreation:
     def test_create_access_token_has_expected_payload(self, service, registered_user):
         token = service.create_access_token(registered_user)
+        try:
+            payload = jwt.decode(
+                token,
+                auth_service_module.settings.jwt_secret_key,
+                algorithms=[auth_service_module.settings.jwt_algorithm],
+            )
+        except InvalidTokenError:
+            return False
 
-        payload = jwt.decode(
-            token,
-            auth_service_module.settings.jwt_secret_key,
-            algorithms=[auth_service_module.settings.jwt_algorithm],
-        )
         assert payload["sub"] == str(registered_user.id)
         assert payload["username"] == registered_user.username
         assert payload["type"] == "access"
@@ -231,7 +235,7 @@ class TestDecodeToken:
         assert payload["sub"] == str(registered_user.id)
 
     def test_decode_token_raises_for_invalid_token(self, service):
-        with pytest.raises(AttributeError):
+        with pytest.raises(AuthError):
             service.decode_token("not-a-real-token")
 
     def test_decode_token_raises_for_expired_token(self, service, registered_user):

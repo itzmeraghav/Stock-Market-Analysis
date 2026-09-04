@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import hashlib
 
+import jwt
 from fastapi import Request, Response
-from jose import jwt
 from limits import parse_many
 from limits.storage import MemoryStorage
 from limits.strategies import MovingWindowRateLimiter

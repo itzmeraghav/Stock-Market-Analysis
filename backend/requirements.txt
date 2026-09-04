@@ -60,6 +60,6 @@ black
 ruff
 mypy
 pip-audit
-python-jose[cryptography]
+PyJWT==2.13.0
 slowapi
 argon2-cffi

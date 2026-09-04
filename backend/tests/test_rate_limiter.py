@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
+import jwt
 import pytest
-from jose import jwt
 from limits.storage import MemoryStorage
 from limits.strategies import MovingWindowRateLimiter
 from stockmarketanalytics import rate_limiter as rate_limiter_module
@@ -48,12 +48,10 @@ class TestIsValidAccessToken:
     def test_expired_token_returns_false(self):
         token = _make_token(token_type="access", expired=True)
 
-        with pytest.raises(AttributeError):
-            _is_valid_access_token(token)
+        assert _is_valid_access_token(token) is False
 
     def test_malformed_token_returns_false(self):
-        with pytest.raises(AttributeError):
-            _is_valid_access_token("not-a-real-token")
+        assert _is_valid_access_token("not-a-real-token") is False
 
 
 class TestBucketKey:
@@ -79,8 +77,7 @@ class TestBucketKey:
         )
         request = FakeRequest(headers={"authorization": "Bearer not-a-real-token"})
 
-        with pytest.raises(AttributeError):
-            _bucket_key(request)
+        assert _bucket_key(request) == "ip:10.0.0.1"
 
     def test_non_bearer_authorization_header_falls_back_to_ip(self, monkeypatch):
         monkeypatch.setattr(

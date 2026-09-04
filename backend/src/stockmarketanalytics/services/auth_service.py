@@ -5,9 +5,9 @@ import logging
 import secrets
 from datetime import UTC, datetime, timedelta
 
+import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from jose import jwt
 from sqlalchemy.orm import Session
 from stockmarketanalytics.models.refresh_tokens import RefreshToken
 from stockmarketanalytics.models.users import User

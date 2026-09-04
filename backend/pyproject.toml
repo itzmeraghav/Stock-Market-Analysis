@@ -23,6 +23,7 @@ dependencies = [
     "pandas",
     "pip-audit>=2.10.1",
     "pydantic-settings",
+    "pyjwt>=2.13.0",
     "pymysql>=1.2.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
