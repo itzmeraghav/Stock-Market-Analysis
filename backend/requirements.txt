@@ -60,3 +60,6 @@ black
 ruff
 mypy
 pip-audit
+PyJWT==2.13.0
+slowapi
+argon2-cffi

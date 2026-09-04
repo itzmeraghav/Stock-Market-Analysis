@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from sqlalchemy import inspect
 from sqlalchemy.exc import IntegrityError
 from stockmarketanalytics.models.option_calculation import OptionCalculation
 from stockmarketanalytics.models.prediction import Prediction
+from stockmarketanalytics.models.refresh_tokens import RefreshToken
 from stockmarketanalytics.models.stock import Stock
 from stockmarketanalytics.models.stock_price import StockPrice
 from stockmarketanalytics.models.technical_indicator import TechnicalIndicator
 from stockmarketanalytics.models.trading_analysis import TradingAnalysis
+from stockmarketanalytics.models.users import User
 
 
 class TestStock:
@@ -427,3 +429,120 @@ class TestTradingAnalysisRelationship:
         session.refresh(stock)
 
         assert analysis in stock.trading_analyses
+
+
+@pytest.fixture
+def make_user(session):
+    def _make(username: str = "someone", hashed_password: str = "hashedvalue") -> User:
+        user = User(username=username, hashed_password=hashed_password)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+    return _make
+
+
+class TestUserModel:
+    def test_user_is_persisted_with_defaults(self, make_user):
+        user = make_user()
+
+        assert user.id is not None
+        assert user.is_active is True
+        assert user.failed_login_attempts == 0
+        assert user.locked_until is None
+        assert user.created_at is not None
+
+    def test_duplicate_username_raises_integrity_error(self, session, make_user):
+        make_user(username="dupeuser")
+
+        with pytest.raises(IntegrityError):
+            session.add(User(username="dupeuser", hashed_password="anotherhash"))
+            session.commit()
+
+    def test_user_refresh_tokens_relationship_starts_empty(self, make_user):
+        user = make_user()
+
+        assert user.refresh_tokens == []
+
+    def test_deleting_user_cascades_to_refresh_tokens(self, session, make_user):
+        user = make_user()
+        token = RefreshToken(
+            user_id=user.id,
+            token_hash="somehash",
+            expires_at=datetime.now(UTC) + timedelta(days=1),
+        )
+        session.add(token)
+        session.commit()
+
+        session.delete(user)
+        session.commit()
+
+        remaining = (
+            session.query(RefreshToken).filter(RefreshToken.user_id == user.id).all()
+        )
+        assert remaining == []
+
+
+class TestRefreshTokenModel:
+    def test_refresh_token_is_persisted_with_defaults(self, session, make_user):
+        user = make_user()
+        token = RefreshToken(
+            user_id=user.id,
+            token_hash="somehash",
+            expires_at=datetime.now(UTC) + timedelta(days=7),
+        )
+
+        session.add(token)
+        session.commit()
+        session.refresh(token)
+
+        assert token.id is not None
+        assert token.revoked is False
+        assert token.issued_at is not None
+        assert token.last_used_at is None
+
+    def test_duplicate_token_hash_raises_integrity_error(self, session, make_user):
+        user = make_user()
+        session.add(
+            RefreshToken(
+                user_id=user.id,
+                token_hash="duplicatehash",
+                expires_at=datetime.now(UTC) + timedelta(days=1),
+            )
+        )
+        session.commit()
+
+        with pytest.raises(IntegrityError):
+            session.add(
+                RefreshToken(
+                    user_id=user.id,
+                    token_hash="duplicatehash",
+                    expires_at=datetime.now(UTC) + timedelta(days=1),
+                )
+            )
+            session.commit()
+
+    def test_refresh_token_user_relationship_resolves(self, session, make_user):
+        user = make_user()
+        token = RefreshToken(
+            user_id=user.id,
+            token_hash="somehash",
+            expires_at=datetime.now(UTC) + timedelta(days=1),
+        )
+        session.add(token)
+        session.commit()
+        session.refresh(token)
+
+        assert token.user.id == user.id
+
+    def test_refresh_token_requires_valid_user_id(self, session):
+        session.add(
+            RefreshToken(
+                user_id=9999,
+                token_hash="orphanhash",
+                expires_at=datetime.now(UTC) + timedelta(days=1),
+            )
+        )
+        with pytest.raises(IntegrityError):
+            session.commit()
