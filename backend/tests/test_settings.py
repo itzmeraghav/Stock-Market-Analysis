@@ -97,6 +97,32 @@ class TestSettingsLoading:
 
         assert settings_module.settings.login_max_failed_attempts == 3
 
+    def test_login_rate_limit_per_ip_is_loaded_from_env(
+        self, monkeypatch, reload_settings
+    ):
+        monkeypatch.setenv("LOGIN_RATE_LIMIT_PER_IP", "3/minute")
+        settings_module = reload_settings()
+        assert settings_module.settings.login_rate_limit_per_ip == "3/minute"
+
+    def test_login_lockout_minutes_is_cast_to_int(self, monkeypatch, reload_settings):
+        monkeypatch.setenv("LOGIN_LOCKOUT_MINUTES", "20")
+        settings_module = reload_settings()
+        assert settings_module.settings.login_lockout_minutes == 20
+
+    def test_refresh_min_interval_seconds_is_cast_to_int(
+        self, monkeypatch, reload_settings
+    ):
+        monkeypatch.setenv("REFRESH_MIN_INTERVAL_SECONDS", "45")
+        settings_module = reload_settings()
+        assert settings_module.settings.refresh_min_interval_seconds == 45
+
+    def test_token_global_cap_per_hour_is_loaded_from_env(
+        self, monkeypatch, reload_settings
+    ):
+        monkeypatch.setenv("TOKEN_GLOBAL_CAP_PER_HOUR", "500/hour")
+        settings_module = reload_settings()
+        assert settings_module.settings.token_global_cap_per_hour == "500/hour"
+
     def test_missing_access_token_expire_minutes_uses_env_file_value(
         self, monkeypatch, reload_settings
     ):

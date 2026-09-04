@@ -60,3 +60,6 @@ black
 ruff
 mypy
 pip-audit
+python-jose[cryptography]
+slowapi
+argon2-cffi
