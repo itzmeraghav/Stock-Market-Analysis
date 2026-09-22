@@ -9,6 +9,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from lightgbm import LGBMRegressor
+from scipy.stats import norm
 from sklearn.ensemble import (
     ExtraTreesRegressor,
     HistGradientBoostingRegressor,
@@ -277,7 +278,14 @@ class PredictionService:
                 f"No trained {model_name} model found for {stock.symbol}. Train it first."
             )
 
-        model = joblib.load(model_path)
+        loaded = joblib.load(model_path)
+        if isinstance(loaded, dict) and "model" in loaded:
+            model = loaded["model"]
+            residual_rmse = loaded.get("residual_rmse", 0.0)
+        else:
+            model = loaded
+            residual_rmse = 0.0
+
         df = self.load_feature_frame(stock.id)
         if df.empty:
             raise ValueError(f"No feature data available for {stock.symbol}")
@@ -295,6 +303,7 @@ class PredictionService:
             model_name,
             latest["trading_date"],
             persist,
+            residual_rmse,
         )
 
     def _finalize_prediction(
@@ -305,6 +314,7 @@ class PredictionService:
         model_name: str,
         prediction_date,
         persist: bool,
+        residual_rmse: float,
     ) -> PredictionResponse:
         expected_change_percent = (
             (predicted_close - current_price) / current_price
@@ -317,7 +327,13 @@ class PredictionService:
         else:
             direction = PredictedDirection.FLAT
 
-        confidence = min(0.99, max(0.5, 1 - abs(expected_change_percent) / 10))
+        predicted_return = (predicted_close - current_price) / current_price
+        if residual_rmse > 0:
+            z_score = abs(predicted_return) / residual_rmse
+            confidence = float(2 * norm.cdf(z_score) - 1)
+            confidence = min(0.99, max(0.5, confidence))
+        else:
+            confidence = 0.5
 
         if persist:
             target_date = prediction_date + timedelta(days=1)
