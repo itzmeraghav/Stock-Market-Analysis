@@ -34,7 +34,7 @@ dependencies = [
     "scipy",
     "slowapi>=0.1.10",
     "sqlalchemy",
-    "uvicorn[standard]",
+    "uvicorn>=0.53.0",
     "yfinance>=1.6.0",
 ]
 

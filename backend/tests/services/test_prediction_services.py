@@ -238,11 +238,12 @@ class TestFinalizePrediction:
             model_name="LinearRegression",
             prediction_date=date(2024, 1, 1),
             persist=False,
+            residual_rmse=0.02,
         )
 
         assert response.direction is expected_direction
 
-    def test_confidence_is_clamped_to_half_on_huge_moves(
+    def test_confidence_is_clamped_to_0_99_on_large_relative_moves(
         self, service, trained_stock, session
     ):
         service._finalize_prediction(
@@ -252,12 +253,13 @@ class TestFinalizePrediction:
             model_name="LinearRegression",
             prediction_date=date(2024, 1, 1),
             persist=True,
+            residual_rmse=0.02,
         )
 
         record = session.query(Prediction).filter_by(stock_id=trained_stock.id).one()
-        assert record.confidence == pytest.approx(0.5)
+        assert record.confidence == pytest.approx(0.99)
 
-    def test_confidence_is_clamped_to_0_99_on_tiny_moves(
+    def test_confidence_is_clamped_to_half_on_tiny_relative_moves(
         self, service, trained_stock, session
     ):
         service._finalize_prediction(
@@ -267,10 +269,27 @@ class TestFinalizePrediction:
             model_name="LinearRegression",
             prediction_date=date(2024, 1, 1),
             persist=True,
+            residual_rmse=0.02,
         )
 
         record = session.query(Prediction).filter_by(stock_id=trained_stock.id).one()
-        assert record.confidence == pytest.approx(0.99)
+        assert record.confidence == pytest.approx(0.5, abs=1e-3)
+
+    def test_confidence_falls_back_to_half_when_no_residual_rmse(
+        self, service, trained_stock, session
+    ):
+        service._finalize_prediction(
+            trained_stock,
+            current_price=100.0,
+            predicted_close=110.0,
+            model_name="LinearRegression",
+            prediction_date=date(2024, 1, 1),
+            persist=True,
+            residual_rmse=0.0,
+        )
+
+        record = session.query(Prediction).filter_by(stock_id=trained_stock.id).one()
+        assert record.confidence == pytest.approx(0.5)
 
     def test_persisted_record_uses_next_day_as_target_date(
         self, service, trained_stock, session
@@ -284,6 +303,7 @@ class TestFinalizePrediction:
             model_name="LinearRegression",
             prediction_date=prediction_date,
             persist=True,
+            residual_rmse=0.02,
         )
 
         record = session.query(Prediction).filter_by(stock_id=trained_stock.id).one()
